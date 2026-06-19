@@ -4,26 +4,28 @@ const path = require('path')
 const os = require('os')
 
 const server = jsonServer.create()
+const middlewares = jsonServer.defaults()
 
-const tempDbPath = path.join(os.tmpdir(), 'db.json')
+// مسیر واقعی فایل در Vercel
+const sourceDb = path.join(process.cwd(), 'db.json')
+const tempDb = path.join(os.tmpdir(), 'db.json')
 
-// فقط بار اول فایل را کپی کن
-if (!fs.existsSync(tempDbPath)) {
-  fs.copyFileSync(path.join(__dirname, 'db.json'), tempDbPath)
+// کپی کردن فایل اگر وجود نداشت
+try {
+  if (!fs.existsSync(tempDb)) {
+    fs.copyFileSync(sourceDb, tempDb)
+  }
+} catch (err) {
+  console.error('DB copy error:', err)
 }
 
-const router = jsonServer.router(tempDbPath)
-
-const middlewares = jsonServer.defaults()
+const router = jsonServer.router(tempDb)
 
 server.use(middlewares)
 
-server.use(
-  jsonServer.rewriter({
-    '/api/*': '/$1',
-    '/blog/:resource/:id/show': '/:resource/:id',
-  })
-)
+server.use(jsonServer.rewriter({
+  '/api/*': '/$1',
+}))
 
 server.use(router)
 
