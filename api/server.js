@@ -1,11 +1,30 @@
-const fs = require("fs");
-const os = require("os");
-const path = require("path");
+const jsonServer = require('json-server')
+const fs = require('fs')
+const path = require('path')
+const os = require('os')
 
-const tempDb = path.join(os.tmpdir(), "db.json");
+const server = jsonServer.create()
 
-if (!fs.existsSync(tempDb)) {
-  fs.copyFileSync(path.join(process.cwd(), "db.json"), tempDb);
+const tempDbPath = path.join(os.tmpdir(), 'db.json')
+
+// فقط بار اول فایل را کپی کن
+if (!fs.existsSync(tempDbPath)) {
+  fs.copyFileSync(path.join(__dirname, 'db.json'), tempDbPath)
 }
 
-const router = jsonServer.router(tempDb);
+const router = jsonServer.router(tempDbPath)
+
+const middlewares = jsonServer.defaults()
+
+server.use(middlewares)
+
+server.use(
+  jsonServer.rewriter({
+    '/api/*': '/$1',
+    '/blog/:resource/:id/show': '/:resource/:id',
+  })
+)
+
+server.use(router)
+
+module.exports = server
